@@ -19,6 +19,9 @@ import java.util.regex.PatternSyntaxException;
  */
 public final class PluginConfig {
 
+    /** Текущая версия структуры config.yml (для автообновления старых файлов). */
+    private static final int CONFIG_VERSION = 2;
+
     public enum Visibility {
         ALL,
         ADMIN,
@@ -149,13 +152,14 @@ public final class PluginConfig {
 
     public void reload() {
         FileConfiguration config = plugin.getConfig();
+        migrate(config);
 
         defaultRadius = config.getDouble("settings.default-radius", 12.0);
         minRadius = config.getDouble("settings.min-radius", 3.0);
         maxRadius = config.getDouble("settings.max-radius", 100.0);
         strengthMultiplier = config.getDouble("settings.strength-multiplier", 1.0);
         updateInterval = Math.max(1, config.getInt("settings.update-interval", 2));
-        maxVelocity = config.getDouble("settings.max-velocity", 1.2);
+        maxVelocity = config.getDouble("settings.max-velocity", 1.8);
         stopDistance = config.getDouble("settings.stop-distance", 0.8);
         autoSaveInterval = config.getInt("settings.auto-save-interval", 300);
         maxPoints = config.getInt("settings.max-points", 0);
@@ -182,8 +186,8 @@ public final class PluginConfig {
         errorEnd = config.getString("gradient.error-end", "#FFD180");
 
         itemsEnabled = config.getBoolean("items.enabled", true);
-        itemsSpeed = config.getDouble("items.speed", 0.09);
-        itemsVerticalBoost = config.getDouble("items.vertical-boost", 0.02);
+        itemsSpeed = config.getDouble("items.speed", 0.18);
+        itemsVerticalBoost = config.getDouble("items.vertical-boost", 0.03);
         itemsFreeze = config.getBoolean("items.freeze-at-center", true);
         itemsIgnorePickupDelay = config.getBoolean("items.ignore-pickup-delay", false);
         antiStuckEnabled = config.getBoolean("items.anti-stuck.enabled", true);
@@ -194,11 +198,11 @@ public final class PluginConfig {
         antiStuckLineOfSight = config.getBoolean("items.anti-stuck.require-line-of-sight", false);
 
         playersEnabled = config.getBoolean("players.enabled", true);
-        playersSpeed = config.getDouble("players.speed", 0.05);
-        playersVerticalBoost = config.getDouble("players.vertical-boost", 0.012);
+        playersSpeed = config.getDouble("players.speed", 0.11);
+        playersVerticalBoost = config.getDouble("players.vertical-boost", 0.02);
         countHands = config.getBoolean("players.count-hands", true);
         countArmor = config.getBoolean("players.count-armor", true);
-        countInventory = config.getBoolean("players.count-inventory", false);
+        countInventory = config.getBoolean("players.count-inventory", true);
         countStackAmount = config.getBoolean("players.count-stack-amount", false);
         minWeight = config.getInt("players.min-weight", 2);
         maxWeight = Math.max(1, config.getInt("players.max-weight", 60));
@@ -264,6 +268,44 @@ public final class PluginConfig {
         if (debug) {
             plugin.getLogger().info("[debug] Конфиг загружен, правил материалов: " + weights.size());
         }
+    }
+
+    /**
+     * Автообновление уже созданного config.yml.
+     *
+     * <p>Версия 2: металл в инвентаре теперь учитывается, а базовое притяжение сильнее.
+     * Меняются только значения, которые остались на старых дефолтах — ручные настройки не трогаем.
+     */
+    private void migrate(FileConfiguration config) {
+        int version = config.getInt("config-version", 1);
+        if (version >= CONFIG_VERSION) {
+            return;
+        }
+        boolean inventoryFixed = false;
+        if (!config.getBoolean("players.count-inventory", false)) {
+            config.set("players.count-inventory", true);
+            inventoryFixed = true;
+        }
+        if (config.getDouble("items.speed", 0.09) <= 0.09) {
+            config.set("items.speed", 0.18);
+        }
+        if (config.getDouble("items.vertical-boost", 0.02) <= 0.02) {
+            config.set("items.vertical-boost", 0.03);
+        }
+        if (config.getDouble("players.speed", 0.05) <= 0.05) {
+            config.set("players.speed", 0.11);
+        }
+        if (config.getDouble("players.vertical-boost", 0.012) <= 0.012) {
+            config.set("players.vertical-boost", 0.02);
+        }
+        if (config.getDouble("settings.max-velocity", 1.2) <= 1.2) {
+            config.set("settings.max-velocity", 1.8);
+        }
+        config.set("config-version", CONFIG_VERSION);
+        plugin.saveConfig();
+        plugin.getLogger().info("config.yml обновлён до версии " + CONFIG_VERSION
+                + ": притяжение усилено"
+                + (inventoryFixed ? ", металл в инвентаре теперь учитывается" : ""));
     }
 
     private Pattern compilePattern(String raw) {
