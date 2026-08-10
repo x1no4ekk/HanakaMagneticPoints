@@ -1,0 +1,274 @@
+# ══════════════════════════════════════════════════════════════════════════
+#  ⚡ HanakaMagneticPoints v2.0.0 — Магнитные точки
+#  Ядро: Paper 1.21.x · API: 1.21
+#
+#  В этом файле настраивается АБСОЛЮТНО ВСЁ: физика притяжения, защита,
+#  частицы, звуки, GUI, градиент оформления и списки магнитных материалов.
+#  Тексты сообщений — в файле messages.yml.
+#  После правок: /magnet reload
+# ══════════════════════════════════════════════════════════════════════════
+
+settings:
+  # Радиус новых точек (блоки)
+  default-radius: 12.0
+  # Границы для /magnet radius
+  min-radius: 3.0
+  max-radius: 100.0
+  # Общий множитель силы притяжения (1.0 = стандарт)
+  strength-multiplier: 1.0
+  # Как часто пересчитывать притяжение, в тиках (1 = каждый тик, тяжелее для TPS)
+  update-interval: 2
+  # Максимальная скорость, которую магнит может придать объекту (блоков/тик)
+  max-velocity: 1.2
+  # Ближе этого расстояния к центру притяжение прекращается
+  stop-distance: 0.8
+  # Автосохранение points.yml, в секундах (0 — сохранять только при выключении)
+  auto-save-interval: 300
+  # Миры, в которых плагин полностью отключён
+  disabled-worlds: []
+  # Максимум точек на сервере (0 — без ограничения)
+  max-points: 0
+  # Допустимые символы в названии точки (регулярное выражение)
+  name-pattern: "[A-Za-zА-Яа-яЁё0-9_\\-]{1,32}"
+  # Файл сообщений внутри папки плагина
+  messages-file: messages.yml
+  # Подробные логи в консоль
+  debug: false
+
+# ── Оформление: зелёно-лаймовый градиент ──────────────────────────────────
+# В messages.yml используйте <g>текст</g> — обычный градиент,
+# и <e>текст</e> — градиент ошибок. Доступны любые теги MiniMessage.
+gradient:
+  start: "#00E676"
+  end: "#C6FF00"
+  error-start: "#FF5252"
+  error-end: "#FFD180"
+
+# ── Притяжение предметов ──────────────────────────────────────────────────
+items:
+  enabled: true
+  # Базовая сила рывка для предмета с весом 10
+  speed: 0.09
+  # Дополнительный подъём вверх, чтобы предметы не застревали в блоках
+  vertical-boost: 0.02
+  # Останавливать предмет, когда он долетел до центра
+  freeze-at-center: true
+  # Не трогать только что выброшенные предметы (у них есть задержка подбора)
+  ignore-pickup-delay: false
+
+# ── Притяжение игроков ────────────────────────────────────────────────────
+players:
+  enabled: true
+  speed: 0.05
+  vertical-boost: 0.012
+  # Что учитывать при подсчёте веса металла
+  count-hands: true
+  count-armor: true
+  count-inventory: false
+  # Умножать вес на количество предметов в стаке
+  count-stack-amount: false
+  # Минимальный вес, с которого игрока начинает тянуть
+  min-weight: 2
+  # Ограничение суммарного веса, чтобы не улетать в стену
+  max-weight: 60
+  action-bar:
+    # 📊 Индикатор «Притяжение N ед.» в экшн-баре
+    enabled: true
+    # Как часто обновлять, в тиках
+    interval: 10
+    bar:
+      enabled: true
+      length: 10
+      filled: "▌"
+      empty: "▌"
+  # 🛡 Защита от притяжения
+  protection:
+    sneaking: true      # крадущиеся (Shift)
+    elytra: true        # полёт на элитрах
+    flying: true        # режим полёта
+    creative: true      # креатив
+    spectator: true     # наблюдатель
+    bypass-permission: "magnet.bypass"
+
+# ── Частицы ───────────────────────────────────────────────────────────────
+particles:
+  enabled: true
+  # ELECTRIC_SPARK, END_ROD, WAX_ON, SONIC_BOOM, CRIT, ENCHANTED_HIT, GLOW ...
+  type: WAX_ON
+  # Количество частиц в кольце
+  count: 24
+  # all — видят все, admin — только с правом magnet.particles.see, none — никто
+  visibility: admin
+  # Как часто рисовать кольцо, в тиках
+  interval: 10
+  # Вращать кольцо
+  rotate: true
+  # Дополнительные кольца выше основного (0 — только одно кольцо)
+  rings: 1
+  # Расстояние между кольцами по высоте
+  ring-height: 0.7
+  # Смещение кольца по высоте относительно центра точки
+  vertical-offset: 0.2
+  # Скорость и разброс частиц
+  particle-speed: 0.0
+  spread: 0.0
+  # На каком расстоянии игрок видит частицы
+  view-distance: 48.0
+
+# ── Звуки ─────────────────────────────────────────────────────────────────
+# Можно писать как BLOCK_BEACON_AMBIENT, так и точный ключ block.note_block.bass
+sounds:
+  enabled: true
+  ambient: BLOCK_BEACON_AMBIENT
+  volume: 0.3
+  pitch: 1.5
+  # Интервал фонового звука, в тиках
+  interval: 80
+  ui:
+    volume: 0.7
+    pitch: 1.4
+    click: UI_BUTTON_CLICK
+    success: ENTITY_PLAYER_LEVELUP
+    error: ENTITY_VILLAGER_NO
+    delete: BLOCK_ANVIL_LAND
+    teleport: ENTITY_ENDERMAN_TELEPORT
+
+# ── GUI-панель (/magnet gui) ──────────────────────────────────────────────
+gui:
+  # Количество рядов, 2–6 (последний ряд — навигация)
+  rows: 6
+  filler:
+    enabled: true
+    material: BLACK_STAINED_GLASS_PANE
+  point:
+    active-material: LODESTONE
+    disabled-material: GRAY_DYE
+  navigation:
+    previous-material: ARROW
+    next-material: SPECTRAL_ARROW
+    close-material: BARRIER
+    info-material: COMPASS
+    empty-material: STRUCTURE_VOID
+  # Обновлять панель после действия
+  auto-refresh: true
+
+# ── Телепортация ──────────────────────────────────────────────────────────
+teleport:
+  # Подъём над точкой при телепорте
+  offset-y: 1.0
+  # Искать безопасное место, если точка внутри блоков
+  safe: true
+
+# ── ⚖️ Магнитные материалы и их вес ───────────────────────────────────────
+# Вес 10 тянет максимально сильно, вес 2 — еле-еле. Вес 0 = не притягивается.
+# Поддерживаются шаблоны со звёздочкой: NETHERITE_* — всё незеритовое.
+materials:
+  # Вес для всего, что не попало в списки ниже
+  default-weight: 0
+  # Материалы-исключения: никогда не притягиваются
+  ignored: []
+  groups:
+    netherite:
+      weight: 10
+      items:
+        - NETHERITE_INGOT
+        - NETHERITE_BLOCK
+        - NETHERITE_SCRAP
+        - ANCIENT_DEBRIS
+        - NETHERITE_UPGRADE_SMITHING_TEMPLATE
+        - NETHERITE_*
+    heavy-metal:
+      weight: 8
+      items:
+        - IRON_BLOCK
+        - GOLD_BLOCK
+        - RAW_IRON_BLOCK
+        - RAW_GOLD_BLOCK
+        - IRON_INGOT
+        - GOLD_INGOT
+        - LODESTONE
+        - ANVIL
+        - CHIPPED_ANVIL
+        - DAMAGED_ANVIL
+        - IRON_HORSE_ARMOR
+        - GOLDEN_HORSE_ARMOR
+    tools-armor-ores:
+      weight: 6
+      items:
+        - IRON_SWORD
+        - IRON_PICKAXE
+        - IRON_AXE
+        - IRON_SHOVEL
+        - IRON_HOE
+        - IRON_HELMET
+        - IRON_CHESTPLATE
+        - IRON_LEGGINGS
+        - IRON_BOOTS
+        - SHIELD
+        - IRON_ORE
+        - DEEPSLATE_IRON_ORE
+        - GOLD_ORE
+        - DEEPSLATE_GOLD_ORE
+        - NETHER_GOLD_ORE
+        - GILDED_BLACKSTONE
+        - RAW_IRON
+        - RAW_GOLD
+        - HEAVY_CORE
+    light-metal:
+      weight: 4
+      items:
+        - GOLDEN_SWORD
+        - GOLDEN_PICKAXE
+        - GOLDEN_AXE
+        - GOLDEN_SHOVEL
+        - GOLDEN_HOE
+        - GOLDEN_HELMET
+        - GOLDEN_CHESTPLATE
+        - GOLDEN_LEGGINGS
+        - GOLDEN_BOOTS
+        - IRON_DOOR
+        - IRON_TRAPDOOR
+        - IRON_BARS
+        - HOPPER
+        - CAULDRON
+        - BLAST_FURNACE
+        - SMITHING_TABLE
+        - STONECUTTER
+        - CHAIN
+    small-metal:
+      weight: 2
+      items:
+        - CHAINMAIL_HELMET
+        - CHAINMAIL_CHESTPLATE
+        - CHAINMAIL_LEGGINGS
+        - CHAINMAIL_BOOTS
+        - IRON_NUGGET
+        - GOLD_NUGGET
+        - BUCKET
+        - WATER_BUCKET
+        - LAVA_BUCKET
+        - POWDER_SNOW_BUCKET
+        - MILK_BUCKET
+        - MINECART
+        - CHEST_MINECART
+        - FURNACE_MINECART
+        - HOPPER_MINECART
+        - TNT_MINECART
+        - RAIL
+        - POWERED_RAIL
+        - DETECTOR_RAIL
+        - ACTIVATOR_RAIL
+        - CLOCK
+        - COMPASS
+        - RECOVERY_COMPASS
+        - LIGHTNING_ROD
+        - SHEARS
+        - FLINT_AND_STEEL
+        - IRON_TRAPDOOR
+        - TRIPWIRE_HOOK
+        - PISTON
+        - STICKY_PISTON
+        - CRAFTER
+        - COPPER_INGOT
+        - COPPER_BLOCK
+        - RAW_COPPER
