@@ -54,6 +54,8 @@ public final class PluginConfig {
     private Pattern compiledNamePattern;
     private String messagesFile;
     private boolean debug;
+    private double activationDistance;
+    private int maxItemsPerPoint;
 
     private String gradientStart;
     private String gradientEnd;
@@ -65,6 +67,12 @@ public final class PluginConfig {
     private double itemsVerticalBoost;
     private boolean itemsFreeze;
     private boolean itemsIgnorePickupDelay;
+    private boolean antiStuckEnabled;
+    private int antiStuckInterval;
+    private double antiStuckClimbBoost;
+    private int antiStuckUnstickHeight;
+    private int antiStuckChecks;
+    private boolean antiStuckLineOfSight;
 
     private boolean playersEnabled;
     private double playersSpeed;
@@ -75,6 +83,7 @@ public final class PluginConfig {
     private boolean countStackAmount;
     private int minWeight;
     private int maxWeight;
+    private int weightCacheTicks;
     private boolean actionBarEnabled;
     private int actionBarInterval;
     private boolean barEnabled;
@@ -100,6 +109,8 @@ public final class PluginConfig {
     private double particleSpeed;
     private double particleSpread;
     private double viewDistance;
+    private boolean particlesAvoidBlocks;
+    private int particleSurfaceLift;
 
     private boolean soundsEnabled;
     private String ambientSound;
@@ -150,6 +161,8 @@ public final class PluginConfig {
         maxPoints = config.getInt("settings.max-points", 0);
         messagesFile = config.getString("settings.messages-file", "messages.yml");
         debug = config.getBoolean("settings.debug", false);
+        activationDistance = Math.max(0.0, config.getDouble("settings.activation-distance", 96.0));
+        maxItemsPerPoint = Math.max(0, config.getInt("settings.max-items-per-point", 64));
 
         Set<String> worlds = new HashSet<>();
         List<String> rawWorlds = config.getStringList("settings.disabled-worlds");
@@ -173,6 +186,12 @@ public final class PluginConfig {
         itemsVerticalBoost = config.getDouble("items.vertical-boost", 0.02);
         itemsFreeze = config.getBoolean("items.freeze-at-center", true);
         itemsIgnorePickupDelay = config.getBoolean("items.ignore-pickup-delay", false);
+        antiStuckEnabled = config.getBoolean("items.anti-stuck.enabled", true);
+        antiStuckInterval = Math.max(1, config.getInt("items.anti-stuck.check-interval", 10));
+        antiStuckClimbBoost = Math.max(0.0, config.getDouble("items.anti-stuck.climb-boost", 0.3));
+        antiStuckUnstickHeight = Math.max(0, config.getInt("items.anti-stuck.unstick-height", 3));
+        antiStuckChecks = Math.max(1, config.getInt("items.anti-stuck.stuck-checks", 4));
+        antiStuckLineOfSight = config.getBoolean("items.anti-stuck.require-line-of-sight", false);
 
         playersEnabled = config.getBoolean("players.enabled", true);
         playersSpeed = config.getDouble("players.speed", 0.05);
@@ -183,6 +202,7 @@ public final class PluginConfig {
         countStackAmount = config.getBoolean("players.count-stack-amount", false);
         minWeight = config.getInt("players.min-weight", 2);
         maxWeight = Math.max(1, config.getInt("players.max-weight", 60));
+        weightCacheTicks = Math.max(0, config.getInt("players.weight-cache-ticks", 10));
         actionBarEnabled = config.getBoolean("players.action-bar.enabled", true);
         actionBarInterval = Math.max(1, config.getInt("players.action-bar.interval", 10));
         barEnabled = config.getBoolean("players.action-bar.bar.enabled", true);
@@ -208,6 +228,8 @@ public final class PluginConfig {
         particleSpeed = config.getDouble("particles.particle-speed", 0.0);
         particleSpread = config.getDouble("particles.spread", 0.0);
         viewDistance = config.getDouble("particles.view-distance", 48.0);
+        particlesAvoidBlocks = config.getBoolean("particles.avoid-blocks", true);
+        particleSurfaceLift = Math.max(0, config.getInt("particles.surface-lift", 2));
 
         soundsEnabled = config.getBoolean("sounds.enabled", true);
         ambientSound = Sounds.key(config.getString("sounds.ambient", "BLOCK_BEACON_AMBIENT"), "BLOCK_BEACON_AMBIENT");
@@ -354,6 +376,16 @@ public final class PluginConfig {
         return debug;
     }
 
+    /** Радиус вокруг точки, в котором должен быть игрок, чтобы точка работала (0 — всегда). */
+    public double activationDistance() {
+        return activationDistance;
+    }
+
+    /** Максимум предметов, которые одна точка обрабатывает за проход (0 — без лимита). */
+    public int maxItemsPerPoint() {
+        return maxItemsPerPoint;
+    }
+
     public String gradientStart() {
         return gradientStart;
     }
@@ -390,6 +422,31 @@ public final class PluginConfig {
         return itemsIgnorePickupDelay;
     }
 
+    /** Обходить блоки и вытаскивать предметы, застрявшие в блоках. */
+    public boolean antiStuckEnabled() {
+        return antiStuckEnabled;
+    }
+
+    public int antiStuckInterval() {
+        return antiStuckInterval;
+    }
+
+    public double antiStuckClimbBoost() {
+        return antiStuckClimbBoost;
+    }
+
+    public int antiStuckUnstickHeight() {
+        return antiStuckUnstickHeight;
+    }
+
+    public int antiStuckChecks() {
+        return antiStuckChecks;
+    }
+
+    public boolean antiStuckLineOfSight() {
+        return antiStuckLineOfSight;
+    }
+
     public boolean playersEnabled() {
         return playersEnabled;
     }
@@ -424,6 +481,11 @@ public final class PluginConfig {
 
     public int maxWeight() {
         return maxWeight;
+    }
+
+    /** Сколько тиков живёт кэш подсчёта металла в инвентаре (0 — считать каждый раз). */
+    public int weightCacheTicks() {
+        return weightCacheTicks;
     }
 
     public boolean actionBarEnabled() {
@@ -520,6 +582,16 @@ public final class PluginConfig {
 
     public double viewDistance() {
         return viewDistance;
+    }
+
+    /** Не рисовать частицы внутри блоков. */
+    public boolean particlesAvoidBlocks() {
+        return particlesAvoidBlocks;
+    }
+
+    /** На сколько блоков поднимать частицу, если она попала в блок (0 — просто пропускать). */
+    public int particleSurfaceLift() {
+        return particleSurfaceLift;
     }
 
     public boolean soundsEnabled() {
