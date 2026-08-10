@@ -30,6 +30,9 @@ import java.util.function.Predicate;
  * <ul>
  *   <li>анти-застревание — предметы перепрыгивают низкие блоки, не вдавливаются в стены,
  *       пол и потолок, а уже застрявшие вытаскиваются на свободное место;</li>
+ *   <li>захват игрока — рывок в сторону от точки гасится, на земле игрока слегка отрывает
+ *       от пола (иначе трение съедает притяжение), а у края радиуса тяга усиливается,
+ *       поэтому убежать стрейфом уже не выйдет;</li>
  *   <li>оптимизация — фильтр сущностей на стороне сервера, переиспользуемые объекты,
  *       кэш веса инвентаря, «спящие» точки без игроков рядом и никаких обращений
  *       к незагруженным чанкам.</li>
@@ -68,6 +71,7 @@ public final class MagnetEngine implements Runnable {
 
     private final HanakaMagneticPoints plugin;
     private final Map<UUID, Long> actionBarCooldowns = new HashMap<>();
+    private final Map<UUID, Long> liftCooldowns = new HashMap<>();
     private final Map<UUID, ItemTracker> itemTrackers = new HashMap<>();
     private final Map<UUID, WeightCache> weightCache = new HashMap<>();
     private final Map<UUID, List<Player>> playersByWorld = new HashMap<>();
@@ -258,6 +262,12 @@ public final class MagnetEngine implements Runnable {
         int minWeight = config.minWeight();
         int maxWeight = config.maxWeight();
         boolean actionBar = config.actionBarEnabled();
+        boolean grip = config.gripEnabled();
+        double counterEscape = grip ? config.gripCounterEscape() : 0.0;
+        boolean override = grip && config.gripOverride();
+        double groundLift = grip ? config.gripGroundLift() : 0.0;
+        double edgeBoost = grip ? config.gripEdgeBoost() : 1.0;
+        double edgeStart = config.gripEdgeStart();
         double centerX = center.getX();
         double centerY = center.getY();
         double centerZ = center.getZ();
@@ -282,11 +292,49 @@ public final class MagnetEngine implements Runnable {
             int capped = Math.min(weight, maxWeight);
             double distance = Math.sqrt(distanceSquared);
             if (distance > stopDistance) {
+                double ux = dx / distance;
+                double uy = dy / distance;
+                double uz = dz / distance;
                 double power = basePower * capped;
+                // У края радиуса тянет заметно сильнее, чтобы разбег не вынес игрока наружу.
+                if (edgeBoost > 1.0 && radius > 0.0) {
+                    double ratio = distance / radius;
+                    if (ratio > edgeStart) {
+                        double progress = (ratio - edgeStart) / Math.max(1.0E-6, 1.0 - edgeStart);
+                        power *= 1.0 + (edgeBoost - 1.0) * Math.min(1.0, progress);
+                    }
+                }
                 Vector velocity = player.getVelocity();
-                velocity.setX(velocity.getX() + dx / distance * power);
-                velocity.setY(velocity.getY() + dy / distance * power + verticalBoost);
-                velocity.setZ(velocity.getZ() + dz / distance * power);
+                double pullX = ux * power;
+                double pullY = uy * power + verticalBoost;
+                double pullZ = uz * power;
+
+                if (grip) {
+                    // Составляющая скорости игрока вдоль оси «игрок — точка».
+                    // Отрицательная = игрок убегает от точки.
+                    double radial = velocity.getX() * ux + velocity.getY() * uy + velocity.getZ() * uz;
+                    if (radial < 0.0 && counterEscape > 0.0) {
+                        // Гасим только рывок наружу: движение по кругу вокруг точки остаётся свободным.
+                        double cancel = -radial * counterEscape;
+                        pullX += ux * cancel;
+                        pullY += uy * cancel;
+                        pullZ += uz * cancel;
+                    }
+                    // На земле трение съедает импульс, поэтому слегка отрываем игрока от пола.
+                    if (groundLift > 0.0 && radial < 0.0 && player.isOnGround() && liftReady(player, config)) {
+                        pullY = Math.max(pullY, groundLift);
+                    }
+                }
+
+                if (override) {
+                    velocity.setX(pullX);
+                    velocity.setY(pullY);
+                    velocity.setZ(pullZ);
+                } else {
+                    velocity.setX(velocity.getX() + pullX);
+                    velocity.setY(velocity.getY() + pullY);
+                    velocity.setZ(velocity.getZ() + pullZ);
+                }
                 player.setVelocity(clamp(velocity, maxVelocity));
             }
             if (actionBar && ready(player, config)) {
@@ -417,6 +465,17 @@ public final class MagnetEngine implements Runnable {
         return true;
     }
 
+    /** Подбрасывать игрока над землёй можно не каждый тик, иначе это выглядит как тряска. */
+    private boolean liftReady(Player player, PluginConfig config) {
+        UUID uuid = player.getUniqueId();
+        Long last = liftCooldowns.get(uuid);
+        if (last != null && ticks - last < config.gripLiftInterval()) {
+            return false;
+        }
+        liftCooldowns.put(uuid, ticks);
+        return true;
+    }
+
     private boolean isProtected(PluginConfig config, Player player) {
         if (config.protectSneaking() && player.isSneaking()) {
             return true;
@@ -491,6 +550,7 @@ public final class MagnetEngine implements Runnable {
 
     public void forget(UUID uuid) {
         actionBarCooldowns.remove(uuid);
+        liftCooldowns.remove(uuid);
         weightCache.remove(uuid);
     }
 
@@ -516,6 +576,12 @@ public final class MagnetEngine implements Runnable {
         while (bars.hasNext()) {
             if (Bukkit.getPlayer(bars.next()) == null) {
                 bars.remove();
+            }
+        }
+        Iterator<UUID> lifts = liftCooldowns.keySet().iterator();
+        while (lifts.hasNext()) {
+            if (Bukkit.getPlayer(lifts.next()) == null) {
+                lifts.remove();
             }
         }
         if (config.debug()) {

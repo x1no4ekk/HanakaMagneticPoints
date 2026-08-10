@@ -87,6 +87,13 @@ public final class PluginConfig {
     private int minWeight;
     private int maxWeight;
     private int weightCacheTicks;
+    private boolean gripEnabled;
+    private double gripCounterEscape;
+    private boolean gripOverride;
+    private double gripGroundLift;
+    private int gripLiftInterval;
+    private double gripEdgeBoost;
+    private double gripEdgeStart;
     private boolean actionBarEnabled;
     private int actionBarInterval;
     private boolean barEnabled;
@@ -177,7 +184,7 @@ public final class PluginConfig {
         }
         disabledWorlds = worlds;
 
-        namePattern = config.getString("settings.name-pattern", "[A-Za-z\\u0410-\\u042f\\u0430-\\u044f\\u0401\\u04510-9_\\\\-]{1,32}");
+        namePattern = config.getString("settings.name-pattern", "[A-Za-zА-Яа-яЁё0-9_\\-]{1,32}");
         compiledNamePattern = compilePattern(namePattern);
 
         gradientStart = config.getString("gradient.start", "#00E676");
@@ -207,12 +214,19 @@ public final class PluginConfig {
         minWeight = config.getInt("players.min-weight", 2);
         maxWeight = Math.max(1, config.getInt("players.max-weight", 60));
         weightCacheTicks = Math.max(0, config.getInt("players.weight-cache-ticks", 10));
+        gripEnabled = config.getBoolean("players.grip.enabled", true);
+        gripCounterEscape = clamp01(config.getDouble("players.grip.counter-escape", 1.0));
+        gripOverride = config.getBoolean("players.grip.override-movement", false);
+        gripGroundLift = Math.max(0.0, config.getDouble("players.grip.ground-lift", 0.28));
+        gripLiftInterval = Math.max(1, config.getInt("players.grip.ground-lift-interval", 8));
+        gripEdgeBoost = Math.max(1.0, config.getDouble("players.grip.edge-boost", 2.0));
+        gripEdgeStart = Math.min(0.99, Math.max(0.0, config.getDouble("players.grip.edge-start", 0.7)));
         actionBarEnabled = config.getBoolean("players.action-bar.enabled", true);
         actionBarInterval = Math.max(1, config.getInt("players.action-bar.interval", 10));
         barEnabled = config.getBoolean("players.action-bar.bar.enabled", true);
         barLength = Math.max(0, config.getInt("players.action-bar.bar.length", 10));
-        barFilled = config.getString("players.action-bar.bar.filled", "\\u258c");
-        barEmpty = config.getString("players.action-bar.bar.empty", "\\u258c");
+        barFilled = config.getString("players.action-bar.bar.filled", "▌");
+        barEmpty = config.getString("players.action-bar.bar.empty", "▌");
         protectSneaking = config.getBoolean("players.protection.sneaking", true);
         protectElytra = config.getBoolean("players.protection.elytra", true);
         protectFlying = config.getBoolean("players.protection.flying", true);
@@ -306,6 +320,13 @@ public final class PluginConfig {
         plugin.getLogger().info("config.yml обновлён до версии " + CONFIG_VERSION
                 + ": притяжение усилено"
                 + (inventoryFixed ? ", металл в инвентаре теперь учитывается" : ""));
+    }
+
+    private static double clamp01(double value) {
+        if (value < 0.0) {
+            return 0.0;
+        }
+        return value > 1.0 ? 1.0 : value;
     }
 
     private Pattern compilePattern(String raw) {
@@ -530,6 +551,41 @@ public final class PluginConfig {
         return weightCacheTicks;
     }
 
+    /** Захват: не даёт игроку убежать из поля бегом и стрейфом. */
+    public boolean gripEnabled() {
+        return gripEnabled;
+    }
+
+    /** Насколько гасится рывок игрока в сторону от точки: 0 — не мешать, 1 — полностью. */
+    public double gripCounterEscape() {
+        return gripCounterEscape;
+    }
+
+    /** Полностью перехватывать движение игрока вместо добавления импульса. */
+    public boolean gripOverride() {
+        return gripOverride;
+    }
+
+    /** Импульс вверх, чтобы трение о землю не съедало притяжение (0 — выключено). */
+    public double gripGroundLift() {
+        return gripGroundLift;
+    }
+
+    /** Минимальный интервал между подбрасываниями игрока, в тиках. */
+    public int gripLiftInterval() {
+        return gripLiftInterval;
+    }
+
+    /** Во сколько раз сильнее тянет у самой границы радиуса. */
+    public double gripEdgeBoost() {
+        return gripEdgeBoost;
+    }
+
+    /** С какой доли радиуса начинается усиление тяги. */
+    public double gripEdgeStart() {
+        return gripEdgeStart;
+    }
+
     public boolean actionBarEnabled() {
         return actionBarEnabled;
     }
@@ -547,11 +603,11 @@ public final class PluginConfig {
     }
 
     public String barFilled() {
-        return barFilled == null ? "\\u258c" : barFilled;
+        return barFilled == null ? "▌" : barFilled;
     }
 
     public String barEmpty() {
-        return barEmpty == null ? "\\u258c" : barEmpty;
+        return barEmpty == null ? "▌" : barEmpty;
     }
 
     public boolean protectSneaking() {
