@@ -1,0 +1,101 @@
+# ══════════════════════════════════════════════════════════════════════════
+#  ⚡ HanakaMagneticPoints — тексты
+#  <g>...</g> — зелёно-лаймовый градиент из config.yml (gradient.start/end)
+#  <e>...</e> — градиент ошибок (gradient.error-start/error-end)
+#  Поддерживается весь MiniMessage: <gray>, <bold>, <hover:...>, <click:...>
+#  Пустая строка "" полностью отключает сообщение.
+# ══════════════════════════════════════════════════════════════════════════
+
+prefix: "<g>⚡ HanakaMagnetic</g> <dark_gray>»</dark_gray> "
+
+no-permission: "{prefix}<e>Недостаточно прав</e> <dark_gray>({permission})</dark_gray>"
+player-only: "{prefix}<e>Эта команда доступна только в игре</e>"
+unknown-subcommand: "{prefix}<e>Неизвестная подкоманда</e> <white>{input}</white><gray>. Список: </gray><g>/{label} help</g>"
+usage: "{prefix}<gray>Использование:</gray> <g>/{label} {usage}</g>"
+reloaded: "{prefix}<g>Конфиг и точки перезагружены</g> <dark_gray>({ms} мс, точек: {points})</dark_gray>"
+
+help:
+  header: "<dark_gray>▬▬▬▬▬▬▬▬▬▬</dark_gray> <g>⚡ HanakaMagneticPoints v{version}</g> <dark_gray>▬▬▬▬▬▬▬▬▬▬</dark_gray>"
+  lines:
+    - "<g>/{label} add ‹название›</g> <dark_gray>—</dark_gray> <gray>создать точку там, где ты стоишь</gray>"
+    - "<g>/{label} remove ‹название›</g> <dark_gray>—</dark_gray> <gray>удалить точку</gray>"
+    - "<g>/{label} list</g> <dark_gray>—</dark_gray> <gray>список всех точек</gray>"
+    - "<g>/{label} info ‹название›</g> <dark_gray>—</dark_gray> <gray>мир, координаты, радиус, статус</gray>"
+    - "<g>/{label} toggle ‹название›</g> <dark_gray>—</dark_gray> <gray>включить или выключить точку</gray>"
+    - "<g>/{label} tp ‹название›</g> <dark_gray>—</dark_gray> <gray>телепорт к точке</gray>"
+    - "<g>/{label} radius ‹название› ‹радиус›</g> <dark_gray>—</dark_gray> <gray>изменить радиус ({min}–{max})</gray>"
+    - "<g>/{label} gui</g> <dark_gray>—</dark_gray> <gray>панель управления</gray>"
+    - "<g>/{label} particles ‹on/off/admin›</g> <dark_gray>—</dark_gray> <gray>видимость частиц</gray>"
+    - "<g>/{label} reload</g> <dark_gray>—</dark_gray> <gray>перезагрузить конфиг и точки</gray>"
+  footer: "<dark_gray>Алиасы:</dark_gray> <g>/hanakamagnetic</g><dark_gray>, </dark_gray><g>/hmp</g> <dark_gray>· ЛКМ — телепорт, ПКМ — вкл/выкл, Shift+ПКМ — удалить</dark_gray>"
+
+point:
+  status-enabled: "<green>включена</green>"
+  status-disabled: "<red>выключена</red>"
+  invalid-name: "{prefix}<e>Недопустимое название</e> <white>{name}</white> <dark_gray>(шаблон: {pattern})</dark_gray>"
+  exists: "{prefix}<e>Точка</e> <white>{name}</white> <e>уже существует</e>"
+  not-found: "{prefix}<e>Точка</e> <white>{name}</white> <e>не найдена</e>"
+  limit: "{prefix}<e>Достигнут лимит точек:</e> <white>{limit}</white>"
+  world-missing: "{prefix}<e>Мир</e> <white>{world}</white> <e>не загружен</e>"
+  created: "{prefix}<g>Точка {name} создана</g> <dark_gray>· {world} {x} {y} {z} · радиус {radius}</dark_gray>"
+  removed: "{prefix}<g>Точка {name} удалена</g>"
+  toggled: "{prefix}<g>Точка {name}</g> <gray>теперь</gray> {status}"
+  radius-changed: "{prefix}<g>Радиус точки {name} → {radius}</g>"
+  radius-invalid: "{prefix}<e>Радиус должен быть числом от {min} до {max}</e> <dark_gray>(введено: {input})</dark_gray>"
+  teleported: "{prefix}<g>Телепорт к точке {name}</g>"
+  list-empty: "{prefix}<gray>Магнитных точек пока нет. Создай первую:</gray> <g>/magnet add ‹название›</g>"
+  list-header: "{prefix}<g>Магнитные точки</g> <dark_gray>({count})</dark_gray>"
+  list-entry: "<dark_gray>•</dark_gray> <hover:show_text:'<gray>ЛКМ — телепорт</gray>'><click:run_command:'/magnet tp {name}'><g>{name}</g></click></hover> <dark_gray>·</dark_gray> <gray>{world} {x} {y} {z}</gray> <dark_gray>·</dark_gray> <gray>r={radius}</gray> <dark_gray>·</dark_gray> {status}"
+  info:
+    - "<dark_gray>▬▬▬▬▬</dark_gray> <g>⚡ {name}</g> <dark_gray>▬▬▬▬▬</dark_gray>"
+    - "<gray>Мир:</gray> <white>{world}</white>"
+    - "<gray>Координаты:</gray> <white>{x}, {y}, {z}</white>"
+    - "<gray>Радиус:</gray> <white>{radius}</white> <dark_gray>блоков</dark_gray>"
+    - "<gray>Статус:</gray> {status}"
+    - "<gray>Создал:</gray> <white>{creator}</white> <dark_gray>({created})</dark_gray>"
+    - "<gray>Расстояние до тебя:</gray> <white>{distance}</white>"
+
+particles:
+  updated: "{prefix}<g>Видимость частиц: {mode}</g>"
+  invalid: "{prefix}<e>Укажи режим:</e> <white>on</white><gray>, </gray><white>off</white><gray> или </gray><white>admin</white> <dark_gray>(введено: {input})</dark_gray>"
+
+# 📊 Индикатор силы в экшн-баре. Плейсхолдеры: {strength} {max} {bar} {point} {distance}
+action-bar: "<g>🧲 Притяжение {strength} ед.</g> {bar}"
+
+gui:
+  title: "<g>⚡ Магнитные точки</g> <dark_gray>({page}/{pages})</dark_gray>"
+  point-name: "<g>{name}</g>"
+  point-lore:
+    - "<gray>Мир:</gray> <white>{world}</white>"
+    - "<gray>Координаты:</gray> <white>{x}, {y}, {z}</white>"
+    - "<gray>Радиус:</gray> <white>{radius}</white>"
+    - "<gray>Статус:</gray> {status}"
+    - "<gray>Создал:</gray> <white>{creator}</white>"
+    - ""
+    - "<dark_gray>▶</dark_gray> <g>ЛКМ</g> <gray>— телепорт</gray>"
+    - "<dark_gray>▶</dark_gray> <g>ПКМ</g> <gray>— вкл/выкл</gray>"
+    - "<dark_gray>▶</dark_gray> <e>Shift + ПКМ</e> <gray>— удалить</gray>"
+  previous:
+    name: "<g>← Предыдущая страница</g>"
+    lore:
+      - "<gray>Страница {page} из {pages}</gray>"
+  next:
+    name: "<g>Следующая страница →</g>"
+    lore:
+      - "<gray>Страница {page} из {pages}</gray>"
+  close:
+    name: "<e>Закрыть</e>"
+    lore:
+      - "<gray>Закрыть панель</gray>"
+  info:
+    name: "<g>⚡ HanakaMagneticPoints</g>"
+    lore:
+      - "<gray>Всего точек:</gray> <white>{count}</white>"
+      - "<gray>Страница:</gray> <white>{page}/{pages}</white>"
+      - ""
+      - "<dark_gray>/magnet reload — перезагрузка</dark_gray>"
+  empty:
+    name: "<e>Точек пока нет</e>"
+    lore:
+      - "<gray>Создай первую точку командой</gray>"
+      - "<g>/magnet add ‹название›</g>"
