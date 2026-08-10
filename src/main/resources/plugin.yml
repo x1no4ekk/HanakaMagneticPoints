@@ -1,0 +1,37 @@
+name: HanakaMagneticPoints
+version: '${project.version}'
+main: ru.hanaka.magneticpoints.HanakaMagneticPoints
+api-version: '1.21'
+author: Hanaka
+description: "Магнитные точки — притягивают металлические предметы и игроков с металлом."
+website: https://github.com/x1no4ekk/HanakaMagneticPoints
+
+commands:
+  magnet:
+    description: Управление магнитными точками
+    usage: /magnet help
+    permission: magnet.admin
+    aliases:
+      - hanakamagnetic
+      - hanakamagneticpoints
+      - hmagnetic
+      - hmp
+      - magneticpoints
+      - magnetpoints
+
+permissions:
+  magnet.admin:
+    description: Полный доступ ко всем командам /magnet
+    default: op
+    children:
+      magnet.gui: true
+      magnet.particles.see: true
+  magnet.gui:
+    description: Доступ к GUI-панели магнитных точек
+    default: op
+  magnet.particles.see:
+    description: Видеть частицы, когда particles.visibility = admin
+    default: op
+  magnet.bypass:
+    description: Игрок не притягивается магнитными точками
+    default: false
