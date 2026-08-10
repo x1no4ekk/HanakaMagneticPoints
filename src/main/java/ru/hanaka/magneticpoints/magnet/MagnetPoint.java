@@ -23,6 +23,10 @@ public final class MagnetPoint {
     private final String creator;
     private final long createdAt;
 
+    /** Кэш локации, чтобы не создавать объект каждый тик. */
+    private World cachedWorld;
+    private Location cachedLocation;
+
     public MagnetPoint(String name,
                        String worldName,
                        UUID worldId,
@@ -108,12 +112,29 @@ public final class MagnetPoint {
         return Bukkit.getWorld(worldName);
     }
 
-    public Location getLocation() {
+    /**
+     * Локация без копирования — для задач, которые выполняются каждый тик.
+     * Возвращённый объект изменять нельзя.
+     */
+    public Location cachedLocation() {
         World world = getWorld();
         if (world == null) {
+            cachedWorld = null;
+            cachedLocation = null;
             return null;
         }
-        return new Location(world, x, y, z);
+        Location cached = cachedLocation;
+        if (cached == null || cachedWorld != world) {
+            cached = new Location(world, x, y, z);
+            cachedWorld = world;
+            cachedLocation = cached;
+        }
+        return cached;
+    }
+
+    public Location getLocation() {
+        Location cached = cachedLocation();
+        return cached == null ? null : cached.clone();
     }
 
     public boolean isInside(Location location) {

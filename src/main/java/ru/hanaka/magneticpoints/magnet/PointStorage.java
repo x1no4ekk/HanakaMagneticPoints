@@ -95,8 +95,17 @@ public final class PointStorage {
         return points.remove(name.toLowerCase(Locale.ROOT)) != null;
     }
 
+    /** Безопасная копия — для команд, GUI и всего, что вызывается редко. */
     public Collection<MagnetPoint> all() {
         return Collections.unmodifiableCollection(new ArrayList<>(points.values()));
+    }
+
+    /**
+     * Прямой доступ без копирования — только для задач, работающих каждый тик.
+     * Коллекцию нельзя изменять во время обхода.
+     */
+    public Collection<MagnetPoint> view() {
+        return points.values();
     }
 
     public List<String> names() {

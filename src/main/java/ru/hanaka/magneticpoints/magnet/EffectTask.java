@@ -13,10 +13,18 @@ import java.util.List;
 
 /**
  * Анимация частиц по кругу вокруг точки и фоновый звук маяка.
+ *
+ * <p>v2.1: частицы не рисуются внутри блоков (при необходимости поднимаются на поверхность),
+ * синусы и косинусы кольца считаются один раз, а списки зрителей переиспользуются.
  */
 public final class EffectTask implements Runnable {
 
     private final HanakaMagneticPoints plugin;
+    private final List<Player> viewers = new ArrayList<>();
+    private final List<Player> allowed = new ArrayList<>();
+    private final Location scratch = new Location(null, 0.0, 0.0, 0.0);
+    private double[] ringCos = new double[0];
+    private double[] ringSin = new double[0];
     private long ticks;
 
     public EffectTask(HanakaMagneticPoints plugin) {
@@ -38,12 +46,17 @@ public final class EffectTask implements Runnable {
         }
 
         double phase = config.particleRotate() ? Math.toRadians((ticks * 2L) % 360L) : 0.0;
+        double phaseCos = Math.cos(phase);
+        double phaseSin = Math.sin(phase);
+        if (drawParticles) {
+            prepareTable(config.particleCount());
+        }
 
-        for (MagnetPoint point : plugin.storage().all()) {
+        for (MagnetPoint point : plugin.storage().view()) {
             if (!point.isEnabled()) {
                 continue;
             }
-            Location center = point.getLocation();
+            Location center = point.cachedLocation();
             if (center == null) {
                 continue;
             }
@@ -51,35 +64,42 @@ public final class EffectTask implements Runnable {
             if (world == null || config.worldDisabled(world.getName())) {
                 continue;
             }
-            List<Player> viewers = viewers(config, world, center);
+            collectViewers(config, world, center);
             if (viewers.isEmpty()) {
                 continue;
             }
             if (drawParticles) {
-                drawRings(config, point, center, viewers, phase);
+                drawRings(config, point, center, world, phaseCos, phaseSin);
             }
             if (playSound) {
-                for (Player viewer : viewers) {
-                    Sounds.play(viewer, center, config.ambientSound(), config.soundVolume(), config.soundPitch());
+                for (int index = 0; index < viewers.size(); index++) {
+                    Sounds.play(viewers.get(index), center, config.ambientSound(),
+                            config.soundVolume(), config.soundPitch());
                 }
             }
+            viewers.clear();
         }
+        viewers.clear();
     }
 
-    private List<Player> viewers(PluginConfig config, World world, Location center) {
-        List<Player> viewers = new ArrayList<>();
+    private void collectViewers(PluginConfig config, World world, Location center) {
+        viewers.clear();
         double maxDistanceSquared = config.viewDistance() * config.viewDistance();
-        for (Player player : world.getPlayers()) {
-            Location location = player.getLocation();
-            double dx = location.getX() - center.getX();
-            double dy = location.getY() - center.getY();
-            double dz = location.getZ() - center.getZ();
+        double centerX = center.getX();
+        double centerY = center.getY();
+        double centerZ = center.getZ();
+        List<Player> players = world.getPlayers();
+        for (int index = 0; index < players.size(); index++) {
+            Player player = players.get(index);
+            player.getLocation(scratch);
+            double dx = scratch.getX() - centerX;
+            double dy = scratch.getY() - centerY;
+            double dz = scratch.getZ() - centerZ;
             if (dx * dx + dy * dy + dz * dz > maxDistanceSquared) {
                 continue;
             }
             viewers.add(player);
         }
-        return viewers;
     }
 
     private boolean canSee(PluginConfig config, Player player) {
@@ -93,15 +113,16 @@ public final class EffectTask implements Runnable {
         }
     }
 
-    private void drawRings(PluginConfig config, MagnetPoint point, Location center, List<Player> viewers, double phase) {
-        Particle particle = config.particle();
-        int count = config.particleCount();
+    private void drawRings(PluginConfig config, MagnetPoint point, Location center, World world,
+                           double phaseCos, double phaseSin) {
         double radius = point.getRadius();
-        double spread = config.particleSpread();
-        double speed = config.particleSpeed();
-
-        List<Player> allowed = new ArrayList<>();
-        for (Player viewer : viewers) {
+        int count = ringCos.length;
+        if (radius <= 0.0 || count == 0) {
+            return;
+        }
+        allowed.clear();
+        for (int index = 0; index < viewers.size(); index++) {
+            Player viewer = viewers.get(index);
             if (canSee(config, viewer)) {
                 allowed.add(viewer);
             }
@@ -110,16 +131,93 @@ public final class EffectTask implements Runnable {
             return;
         }
 
-        for (int ring = 0; ring < config.particleRings(); ring++) {
-            double y = center.getY() + config.verticalOffset() + ring * config.ringHeight();
+        Particle particle = config.particle();
+        int rings = config.particleRings();
+        double spread = config.particleSpread();
+        double speed = config.particleSpeed();
+        double ringHeight = config.ringHeight();
+        boolean avoidBlocks = config.particlesAvoidBlocks();
+        int lift = config.particleSurfaceLift();
+        double centerX = center.getX();
+        double centerZ = center.getZ();
+        double baseY = center.getY() + config.verticalOffset();
+
+        for (int ring = 0; ring < rings; ring++) {
+            double ringAngle = ring * 0.15;
+            double ringCosOffset = Math.cos(ringAngle);
+            double ringSinOffset = Math.sin(ringAngle);
+            double rotateCos = phaseCos * ringCosOffset - phaseSin * ringSinOffset;
+            double rotateSin = phaseSin * ringCosOffset + phaseCos * ringSinOffset;
+            double y = baseY + ring * ringHeight;
             for (int index = 0; index < count; index++) {
-                double angle = (2.0 * Math.PI * index / count) + phase + ring * 0.15;
-                double x = center.getX() + Math.cos(angle) * radius;
-                double z = center.getZ() + Math.sin(angle) * radius;
-                for (Player viewer : allowed) {
-                    viewer.spawnParticle(particle, x, y, z, 1, spread, spread, spread, speed);
+                double cos = ringCos[index] * rotateCos - ringSin[index] * rotateSin;
+                double sin = ringSin[index] * rotateCos + ringCos[index] * rotateSin;
+                double x = centerX + cos * radius;
+                double z = centerZ + sin * radius;
+                double drawY = y;
+                if (avoidBlocks) {
+                    drawY = freeHeight(world, x, y, z, lift);
+                    if (Double.isNaN(drawY)) {
+                        continue;
+                    }
+                }
+                for (int viewer = 0; viewer < allowed.size(); viewer++) {
+                    allowed.get(viewer).spawnParticle(particle, x, drawY, z, 1, spread, spread, spread, speed);
                 }
             }
         }
+        allowed.clear();
+    }
+
+    /** Таблица синусов/косинусов кольца считается один раз на весь цикл жизни задачи. */
+    private void prepareTable(int count) {
+        if (ringCos.length == count) {
+            return;
+        }
+        ringCos = new double[count];
+        ringSin = new double[count];
+        for (int index = 0; index < count; index++) {
+            double angle = 2.0 * Math.PI * index / count;
+            ringCos[index] = Math.cos(angle);
+            ringSin[index] = Math.sin(angle);
+        }
+    }
+
+    /**
+     * Ищет высоту, на которой частица не окажется внутри блока.
+     *
+     * @return высота для частицы или {@link Double#NaN}, если свободного места нет
+     */
+    private static double freeHeight(World world, double x, double y, double z, int lift) {
+        int blockX = floor(x);
+        int blockZ = floor(z);
+        // Частицы не должны подгружать чанки.
+        if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) {
+            return Double.NaN;
+        }
+        int minY = world.getMinHeight();
+        int maxY = world.getMaxHeight() - 1;
+        int blockY = floor(y);
+        if (blockY < minY || blockY > maxY) {
+            return Double.NaN;
+        }
+        if (world.getBlockAt(blockX, blockY, blockZ).isPassable()) {
+            return y;
+        }
+        for (int offset = 1; offset <= lift; offset++) {
+            int candidate = blockY + offset;
+            if (candidate > maxY) {
+                break;
+            }
+            if (world.getBlockAt(blockX, candidate, blockZ).isPassable()) {
+                return candidate + 0.15;
+            }
+        }
+        return Double.NaN;
+    }
+
+    private static int floor(double value) {
+        int truncated = (int) value;
+        return value < truncated ? truncated - 1 : truncated;
     }
 }
