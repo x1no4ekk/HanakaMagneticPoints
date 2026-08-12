@@ -1,10 +1,10 @@
-# ══════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════
 #  ⚡ HanakaMagneticPoints — тексты
 #  <g>...</g> — зелёно-лаймовый градиент из config.yml (gradient.start/end)
 #  <e>...</e> — градиент ошибок (gradient.error-start/error-end)
 #  Поддерживается весь MiniMessage: <gray>, <bold>, <hover:...>, <click:...>
 #  Пустая строка "" полностью отключает сообщение.
-# ══════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════
 
 prefix: "<g>⚡ HanakaMagnetic</g> <dark_gray>»</dark_gray> "
 
@@ -16,6 +16,20 @@ reloaded: "{prefix}<g>Конфиг и точки перезагружены</g> 
 
 help:
   header: "<dark_gray>▬▬▬▬▬▬▬▬▬▬</dark_gray> <g>⚡ HanakaMagneticPoints v{version}</g> <dark_gray>▬▬▬▬▬▬▬▬▬▬</dark_gray>"
+  # Строки справки по правам: игрок видит только те команды, которые ему выданы.
+  # Пустая строка "" убирает пункт из справки.
+  entries:
+    add: "<g>/{label} add ‹название›</g> <dark_gray>—</dark_gray> <gray>создать точку там, где ты стоишь</gray>"
+    remove: "<g>/{label} remove ‹название›</g> <dark_gray>—</dark_gray> <gray>удалить точку</gray>"
+    list: "<g>/{label} list</g> <dark_gray>—</dark_gray> <gray>список всех точек</gray>"
+    info: "<g>/{label} info ‹название›</g> <dark_gray>—</dark_gray> <gray>мир, координаты, радиус, статус</gray>"
+    toggle: "<g>/{label} toggle ‹название›</g> <dark_gray>—</dark_gray> <gray>включить или выключить точку</gray>"
+    tp: "<g>/{label} tp ‹название›</g> <dark_gray>—</dark_gray> <gray>телепорт к точке</gray>"
+    radius: "<g>/{label} radius ‹название› ‹радиус›</g> <dark_gray>—</dark_gray> <gray>изменить радиус ({min}–{max})</gray>"
+    gui: "<g>/{label} gui</g> <dark_gray>—</dark_gray> <gray>панель управления</gray>"
+    particles: "<g>/{label} particles ‹on/off/admin›</g> <dark_gray>—</dark_gray> <gray>видимость частиц</gray>"
+    reload: "<g>/{label} reload</g> <dark_gray>—</dark_gray> <gray>перезагрузить конфиг и точки</gray>"
+  # Запасной общий список: используется, если секция entries полностью пустая.
   lines:
     - "<g>/{label} add ‹название›</g> <dark_gray>—</dark_gray> <gray>создать точку там, где ты стоишь</gray>"
     - "<g>/{label} remove ‹название›</g> <dark_gray>—</dark_gray> <gray>удалить точку</gray>"
@@ -72,9 +86,9 @@ gui:
     - "<gray>Статус:</gray> {status}"
     - "<gray>Создал:</gray> <white>{creator}</white>"
     - ""
-    - "<dark_gray>▶</dark_gray> <g>ЛКМ</g> <gray>— телепорт</gray>"
-    - "<dark_gray>▶</dark_gray> <g>ПКМ</g> <gray>— вкл/выкл</gray>"
-    - "<dark_gray>▶</dark_gray> <e>Shift + ПКМ</e> <gray>— удалить</gray>"
+    - "<dark_gray>▶</dark_gray> <g>ЛКМ</g> <gray>— телепорт</gray> <dark_gray>(magnet.teleport)</dark_gray>"
+    - "<dark_gray>▶</dark_gray> <g>ПКМ</g> <gray>— вкл/выкл</gray> <dark_gray>(magnet.toggle)</dark_gray>"
+    - "<dark_gray>▶</dark_gray> <e>Shift + ПКМ</e> <gray>— удалить</gray> <dark_gray>(magnet.delete)</dark_gray>"
   previous:
     name: "<g>← Предыдущая страница</g>"
     lore:

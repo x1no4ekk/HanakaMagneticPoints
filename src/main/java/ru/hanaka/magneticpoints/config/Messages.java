@@ -29,6 +29,9 @@ public final class Messages {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.systemDefault());
 
+    /** Прочерк для пустых значений. */
+    private static final String DASH = "\u2014";
+
     private final HanakaMagneticPoints plugin;
     private final PluginConfig config;
     private FileConfiguration yaml;
@@ -126,8 +129,8 @@ public final class Messages {
         map.put("radius", number(point.getRadius()));
         map.put("status", raw(point.isEnabled() ? "point.status-enabled" : "point.status-disabled"));
         map.put("creator", point.getCreator());
-        map.put("created", point.getCreatedAt() <= 0 ? "\\u2014" : DATE_FORMAT.format(Instant.ofEpochMilli(point.getCreatedAt())));
-        map.put("distance", "\\u2014");
+        map.put("created", point.getCreatedAt() <= 0 ? DASH : DATE_FORMAT.format(Instant.ofEpochMilli(point.getCreatedAt())));
+        map.put("distance", DASH);
         return map;
     }
 
