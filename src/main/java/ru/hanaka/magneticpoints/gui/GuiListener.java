@@ -11,11 +11,15 @@ import ru.hanaka.magneticpoints.HanakaMagneticPoints;
 import ru.hanaka.magneticpoints.config.PluginConfig;
 import ru.hanaka.magneticpoints.magnet.MagnetPoint;
 import ru.hanaka.magneticpoints.util.Actions;
+import ru.hanaka.magneticpoints.util.Permissions;
 import ru.hanaka.magneticpoints.util.Placeholders;
 import ru.hanaka.magneticpoints.util.Sounds;
 
 /**
  * Обработка кликов в GUI-панели.
+ *
+ * <p>Каждое действие требует того же права, что и аналогичная команда: телепорт — magnet.teleport,
+ * вкл/выкл — magnet.toggle, удаление — magnet.delete.
  */
 public final class GuiListener implements Listener {
 
@@ -47,8 +51,8 @@ public final class GuiListener implements Listener {
         Player player = (Player) event.getWhoClicked();
         PluginConfig config = plugin.config();
 
-        if (!player.hasPermission("magnet.admin") && !player.hasPermission("magnet.gui")) {
-            plugin.messages().send(player, "no-permission", Placeholders.of("permission", "magnet.gui"));
+        if (!Permissions.has(player, Permissions.GUI)) {
+            deny(player, Permissions.GUI);
             player.closeInventory();
             return;
         }
@@ -86,6 +90,10 @@ public final class GuiListener implements Listener {
 
         ClickType click = event.getClick();
         if (click == ClickType.SHIFT_RIGHT) {
+            if (!Permissions.has(player, Permissions.DELETE)) {
+                deny(player, Permissions.DELETE);
+                return;
+            }
             Actions.delete(plugin, point);
             Sounds.play(player, config.soundDelete(), config.uiVolume(), config.uiPitch());
             plugin.messages().send(player, "point.removed", plugin.messages().placeholders(point));
@@ -95,6 +103,10 @@ public final class GuiListener implements Listener {
             return;
         }
         if (click == ClickType.RIGHT) {
+            if (!Permissions.has(player, Permissions.TOGGLE)) {
+                deny(player, Permissions.TOGGLE);
+                return;
+            }
             Actions.toggle(plugin, point);
             Sounds.play(player, config.soundClick(), config.uiVolume(), config.uiPitch());
             plugin.messages().send(player, "point.toggled", plugin.messages().placeholders(point));
@@ -104,6 +116,10 @@ public final class GuiListener implements Listener {
             return;
         }
         if (click == ClickType.LEFT || click == ClickType.SHIFT_LEFT) {
+            if (!Permissions.has(player, Permissions.TELEPORT)) {
+                deny(player, Permissions.TELEPORT);
+                return;
+            }
             player.closeInventory();
             if (Actions.teleport(plugin, player, point)) {
                 plugin.messages().send(player, "point.teleported", plugin.messages().placeholders(point));
@@ -111,5 +127,11 @@ public final class GuiListener implements Listener {
                 plugin.messages().send(player, "point.world-missing", plugin.messages().placeholders(point));
             }
         }
+    }
+
+    private void deny(Player player, String permission) {
+        PluginConfig config = plugin.config();
+        plugin.messages().send(player, "no-permission", Placeholders.of("permission", permission));
+        Sounds.play(player, config.soundError(), config.uiVolume(), config.uiPitch());
     }
 }

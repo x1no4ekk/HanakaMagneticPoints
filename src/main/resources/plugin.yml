@@ -10,7 +10,6 @@ commands:
   magnet:
     description: Управление магнитными точками
     usage: /magnet help
-    permission: magnet.admin
     aliases:
       - hanakamagnetic
       - hanakamagneticpoints
@@ -19,19 +18,86 @@ commands:
       - magneticpoints
       - magnetpoints
 
+# ═══════════════════════════════════════════════════════════════════════
+#  Права. Каждое действие выдаётся отдельно:
+#    /lp user <ник> permission set magnet.create true
+#    /lp group builder permission set magnet.teleport true
+#  Любое право действия автоматически даёт базовый доступ magnet.use.
+#  magnet.admin включает в себя всё сразу (по умолчанию только у операторов).
+# ═══════════════════════════════════════════════════════════════════════
 permissions:
   magnet.admin:
-    description: Полный доступ ко всем командам /magnet
+    description: Полный доступ ко всем возможностям плагина
     default: op
     children:
+      magnet.use: true
+      magnet.create: true
+      magnet.delete: true
+      magnet.list: true
+      magnet.info: true
+      magnet.toggle: true
+      magnet.radius: true
+      magnet.teleport: true
       magnet.gui: true
+      magnet.particles: true
       magnet.particles.see: true
+      magnet.reload: true
+  magnet.use:
+    description: Базовый доступ к команде /magnet и к справке
+    default: false
+  magnet.create:
+    description: Создание точек (/magnet add)
+    default: false
+    children:
+      magnet.use: true
+  magnet.delete:
+    description: Удаление точек (/magnet remove и Shift+ПКМ в GUI)
+    default: false
+    children:
+      magnet.use: true
+  magnet.list:
+    description: Просмотр списка точек (/magnet list)
+    default: false
+    children:
+      magnet.use: true
+  magnet.info:
+    description: Подробная информация о точке (/magnet info)
+    default: false
+    children:
+      magnet.use: true
+  magnet.toggle:
+    description: Включение и выключение точек (/magnet toggle и ПКМ в GUI)
+    default: false
+    children:
+      magnet.use: true
+  magnet.radius:
+    description: Изменение радиуса точки (/magnet radius)
+    default: false
+    children:
+      magnet.use: true
+  magnet.teleport:
+    description: Телепорт к точке (/magnet tp и ЛКМ в GUI)
+    default: false
+    children:
+      magnet.use: true
   magnet.gui:
-    description: Доступ к GUI-панели магнитных точек
-    default: op
+    description: Доступ к GUI-панели (/magnet gui)
+    default: false
+    children:
+      magnet.use: true
+  magnet.particles:
+    description: Смена видимости частиц (/magnet particles)
+    default: false
+    children:
+      magnet.use: true
+  magnet.reload:
+    description: Перезагрузка конфига и точек (/magnet reload)
+    default: false
+    children:
+      magnet.use: true
   magnet.particles.see:
     description: Видеть частицы, когда particles.visibility = admin
-    default: op
+    default: false
   magnet.bypass:
     description: Игрок не притягивается магнитными точками
     default: false
